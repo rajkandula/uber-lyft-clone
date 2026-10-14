@@ -1,0 +1,689 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kova deck</title>
+<style>
+  :root {
+    /* Brand palette, matching src/app/globals.css */
+    --ink-950: #0c0a09;
+    --ink-900: #1c1917;
+    --ink-800: #292524;
+    --ink-700: #44403c;
+    --ink-600: #57534e;
+    --ink-500: #78716c;
+    --ink-400: #a8a29e;
+    --ink-300: #d6d3d1;
+    --ink-200: #e7e5e4;
+    --ink-100: #f5f5f4;
+    --ink-50: #fafaf9;
+    --gold-700: #a16207;
+    --gold-600: #ca8a04;
+    --gold-500: #eab308;
+    --gold-100: #fef9c3;
+    --gold-50: #fefce8;
+    --green-600: #059669;
+    --red-600: #dc2626;
+
+    /* Roles */
+    --letterbox: var(--ink-950);
+    --stage-bg: var(--ink-50);
+    --card: #ffffff;
+    --text: var(--ink-950);
+    --text-2: var(--ink-600);
+    --text-3: var(--ink-500);
+    --line: var(--ink-200);
+    --line-strong: var(--ink-300);
+    --accent: var(--gold-600);
+    --accent-soft: var(--gold-100);
+    --accent-faint: var(--gold-50);
+    --ring-1: #fde68a;
+    --ring-2: var(--gold-100);
+    --ring-3: var(--gold-50);
+    --ok: var(--green-600);
+    --ok-bg: #ecfdf5;
+    --gap: var(--red-600);
+    --gap-bg: #fef2f2;
+
+    --font: system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+    --radius: 16px;
+    --shadow: 0 1px 2px rgba(28, 25, 23, 0.05), 0 8px 24px rgba(28, 25, 23, 0.07);
+  }
+
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--letterbox);
+    color: var(--text);
+    font-family: var(--font);
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* 1280x720 stage, scaled to fit the window */
+  .stage {
+    position: absolute;
+    left: 50%;
+    top: 50%;
+    width: 1280px;
+    height: 720px;
+    transform: translate(-50%, -50%) scale(var(--scale, 1));
+    transform-origin: center center;
+    background: var(--stage-bg);
+    overflow: hidden;
+    cursor: pointer;
+    user-select: none;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    padding: 64px 80px 88px;
+    display: none;
+    flex-direction: column;
+  }
+  .slide.is-active { display: flex; }
+  .slide.dark { background: var(--ink-950); color: var(--ink-50); }
+
+  .eyebrow {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 14px;
+  }
+  h1, h2, h3, p { margin: 0; }
+  h1 { font-size: 120px; line-height: 1; letter-spacing: -0.045em; font-weight: 800; }
+  h2 { font-size: 44px; line-height: 1.12; letter-spacing: -0.025em; font-weight: 750; max-width: 1060px; }
+  h3 { font-size: 22px; line-height: 1.25; font-weight: 700; letter-spacing: -0.01em; }
+  .lead { font-size: 26px; line-height: 1.45; color: var(--text-2); max-width: 900px; }
+  .dark .lead { color: var(--ink-300); }
+  p, li { font-size: 19px; line-height: 1.5; color: var(--text-2); }
+  .note { margin-top: auto; font-size: 17px; color: var(--text-3); }
+  code { font-family: var(--mono); font-size: 0.9em; white-space: nowrap; }
+
+  /* Title slide */
+  .title-wrap { margin: auto 0; display: flex; flex-direction: column; gap: 28px; }
+  .brand { display: flex; align-items: center; gap: 28px; }
+  .logo-bg { fill: var(--ink-900); }
+  .logo-k { fill: none; stroke: var(--ink-50); stroke-width: 4.5; stroke-linecap: round; }
+  .logo-dot { fill: var(--accent); }
+  .chips { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+  .chip {
+    font-size: 16px;
+    font-weight: 600;
+    padding: 8px 14px;
+    border-radius: 999px;
+    border: 1px solid var(--ink-700);
+    color: var(--ink-200);
+  }
+
+  /* Cards */
+  .cards { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; margin-top: 44px; }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    padding: 28px;
+    box-shadow: var(--shadow);
+  }
+  .card h3 { margin-bottom: 10px; }
+  .card .icon {
+    width: 44px; height: 44px; border-radius: 12px;
+    background: var(--ink-950); color: var(--ink-50);
+    display: grid; place-items: center; margin-bottom: 18px;
+    font-weight: 800; font-size: 18px;
+  }
+  .card .icon.gold { background: var(--accent); color: var(--ink-950); }
+  .card ul { margin: 0; padding-left: 20px; }
+  .card li { font-size: 18px; margin: 4px 0; }
+
+  /* Architecture diagram */
+  .diagram { margin: 22px auto 0; width: 1000px; height: auto; display: block; }
+  .diagram .arrowhead { fill: var(--ink-700); }
+  .diagram .box { fill: var(--card); stroke: var(--line-strong); stroke-width: 1.5; }
+  .diagram .box.ink { fill: var(--ink-950); stroke: var(--ink-950); }
+  .diagram .server { fill: var(--accent-faint); stroke: var(--accent); stroke-width: 1.5; stroke-dasharray: 2 0; }
+  .diagram .store { fill: var(--ink-100); stroke: var(--ink-400); stroke-width: 1.5; }
+  .diagram .t1 { font-size: 17px; font-weight: 700; fill: var(--text); }
+  .diagram .t2 { font-size: 13.5px; fill: var(--text-2); }
+  .diagram .ink .t1, .diagram .t1.inv { fill: var(--ink-50); }
+  .diagram .t2.inv { fill: var(--ink-300); }
+  .diagram .lbl { font-size: 13px; font-weight: 600; fill: var(--text-3); paint-order: stroke; stroke: var(--stage-bg); stroke-width: 5px; stroke-linejoin: round; }
+  .diagram .lbl.gold { fill: var(--gold-700); }
+  .diagram .wire { fill: none; stroke: var(--ink-700); stroke-width: 2; }
+  .diagram .live { fill: none; stroke: var(--accent); stroke-width: 2.5; stroke-dasharray: 7 6; }
+  .diagram .mid { text-anchor: middle; }
+  .slide.is-active .diagram .live { animation: flow 1.2s linear infinite; }
+  @keyframes flow { to { stroke-dashoffset: -26; } }
+
+  /* Ride steps */
+  .steps { position: relative; margin-top: 70px; display: grid; grid-template-columns: repeat(7, 1fr); gap: 14px; }
+  .track { position: absolute; left: 7%; right: 7%; top: 27px; height: 4px; background: var(--line); border-radius: 4px; }
+  .track-fill { position: absolute; inset: 0; background: var(--accent); border-radius: 4px; transform-origin: left center; transform: scaleX(1); }
+  .step { position: relative; text-align: center; }
+  .step .dot {
+    width: 58px; height: 58px; margin: 0 auto 18px; border-radius: 50%;
+    display: grid; place-items: center; font-weight: 800; font-size: 22px;
+    background: var(--ink-950); color: var(--ink-50);
+    border: 4px solid var(--stage-bg);
+  }
+  .step h3 { font-size: 19px; margin-bottom: 8px; }
+  .step p { font-size: 15.5px; line-height: 1.45; }
+  .slide.is-active .track-fill { animation: fill 3.4s linear both; }
+  .slide.is-active .step .dot { animation: dot-on 0.4s ease-out both; animation-delay: calc(var(--i) * 0.5s); }
+  .slide.is-active .step h3,
+  .slide.is-active .step p { animation: text-on 0.4s ease-out both; animation-delay: calc(var(--i) * 0.5s); }
+  @keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+  @keyframes dot-on { from { background: var(--ink-300); color: var(--ink-50); } }
+  @keyframes text-on { from { opacity: 0.3; } }
+
+  /* H3 slide */
+  .split { display: grid; grid-template-columns: 440px 1fr; gap: 48px; align-items: center; margin-top: 18px; flex: 1; }
+  .hexmap { width: 440px; height: 414px; }
+  .hex { fill: var(--ink-100); stroke: var(--ink-300); stroke-width: 1.5; }
+  .hex.ring-0 { fill: var(--gold-500); stroke: var(--gold-700); }
+  .hex.ring-1 { fill: var(--ring-1); }
+  .hex.ring-2 { fill: var(--ring-2); }
+  .hex.ring-3 { fill: var(--ring-3); }
+  .slide.is-active .hex.ring-1,
+  .slide.is-active .hex.ring-2,
+  .slide.is-active .hex.ring-3 { animation: ring-on 0.5s ease-out both; }
+  .slide.is-active .hex.ring-1 { animation-delay: 0.5s; }
+  .slide.is-active .hex.ring-2 { animation-delay: 1.2s; }
+  .slide.is-active .hex.ring-3 { animation-delay: 1.9s; }
+  @keyframes ring-on { from { fill: var(--ink-100); } }
+  .drv { fill: var(--ink-900); stroke: var(--card); stroke-width: 2.5; }
+  .best-halo { fill: none; stroke: var(--accent); stroke-width: 3; opacity: 1; }
+  .slide.is-active .best-halo { animation: halo-in 0.5s ease-out both; animation-delay: 2.7s; }
+  @keyframes halo-in { from { opacity: 0; } to { opacity: 1; } }
+  .pin-label { font-size: 15px; font-weight: 800; fill: var(--ink-950); text-anchor: middle; }
+  .map-label { font-size: 13px; font-weight: 600; fill: var(--text-3); }
+  ol.how { margin: 0; padding: 0; list-style: none; counter-reset: how; display: grid; gap: 18px; }
+  ol.how li { counter-increment: how; position: relative; padding-left: 52px; font-size: 20px; color: var(--text-2); }
+  ol.how li strong { color: var(--text); }
+  ol.how li::before {
+    content: counter(how);
+    position: absolute; left: 0; top: -2px;
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--ink-950); color: var(--ink-50);
+    display: grid; place-items: center; font-weight: 800; font-size: 16px;
+  }
+
+  /* Stack */
+  .stack { margin-top: 36px; display: grid; grid-template-columns: 1fr 1fr; gap: 14px 28px; }
+  .row {
+    display: grid; grid-template-columns: 120px 1fr; gap: 18px; align-items: baseline;
+    padding: 16px 20px; background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  }
+  .row .k { font-size: 14px; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+  .row .v { font-size: 19px; color: var(--text); line-height: 1.4; }
+
+  /* Status */
+  .cols { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; margin-top: 36px; }
+  .col { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 26px 30px; box-shadow: var(--shadow); }
+  .col h3 { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
+  .badge { font-size: 13px; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; padding: 5px 10px; border-radius: 999px; }
+  .badge.ok { background: var(--ok-bg); color: var(--ok); }
+  .badge.gap { background: var(--gap-bg); color: var(--gap); }
+  .col ul { margin: 0; padding-left: 22px; }
+  .col li { font-size: 18px; margin: 6px 0; }
+
+  /* Next steps */
+  ol.next { margin: 36px 0 0; padding: 0; list-style: none; counter-reset: nx; display: grid; gap: 14px; }
+  ol.next li {
+    counter-increment: nx; display: grid; grid-template-columns: 56px 1fr; gap: 16px; align-items: center;
+    background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px 22px;
+    font-size: 20px; color: var(--text-2);
+  }
+  ol.next li::before {
+    content: counter(nx, decimal-leading-zero);
+    font-weight: 800; font-size: 22px; color: var(--accent);
+  }
+  ol.next strong { color: var(--text); }
+
+  /* Chrome: progress, counter, buttons */
+  .chrome {
+    position: absolute; left: 0; right: 0; bottom: 0; height: 64px;
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 0 28px 6px; pointer-events: none;
+  }
+  .chrome > * { pointer-events: auto; }
+  .nav { display: flex; gap: 8px; }
+  .nav button {
+    width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line-strong);
+    background: var(--card); color: var(--text); font: 700 18px/1 var(--font); cursor: pointer;
+  }
+  .nav button:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+  .counter { font: 600 15px/1 var(--mono); color: var(--text-3); }
+  .on-dark .counter { color: var(--ink-400); }
+  .on-dark .nav button { background: var(--ink-900); color: var(--ink-50); border-color: var(--ink-700); }
+  .progress { position: absolute; left: 0; bottom: 0; height: 5px; width: 100%; background: var(--line); }
+  .on-dark .progress { background: var(--ink-800); }
+  .progress-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.25s ease; }
+
+  @media (prefers-reduced-motion: reduce) {
+    .progress-fill { transition: none; }
+    .slide.is-active .diagram .live,
+    .slide.is-active .track-fill,
+    .slide.is-active .step .dot,
+    .slide.is-active .step h3,
+    .slide.is-active .step p,
+    .slide.is-active .hex.ring-1,
+    .slide.is-active .hex.ring-2,
+    .slide.is-active .hex.ring-3,
+    .slide.is-active .best-halo { animation: none; }
+  }
+</style>
+</head>
+<body>
+<main class="stage" id="stage" aria-roledescription="slide deck" aria-label="Kova project deck">
+
+  <!-- 1. Title -->
+  <section class="slide dark" aria-label="Title">
+    <div class="title-wrap">
+      <div class="brand">
+        <svg width="104" height="104" viewBox="0 0 48 48" fill="none" aria-hidden="true">
+          <rect class="logo-bg" width="48" height="48" rx="14"/>
+          <path class="logo-k" d="M15 13V35"/>
+          <path class="logo-k" d="M15 25L31 13"/>
+          <path class="logo-k" d="M15 25L31 35"/>
+          <circle class="logo-dot" cx="33" cy="13" r="4.5"/>
+        </svg>
+        <h1>Kova</h1>
+      </div>
+      <p class="lead">An open-source ride-hailing platform you can run yourself: a rider app, a driver app and an admin console in one Next.js codebase.</p>
+      <div class="chips" aria-label="Key facts">
+        <span class="chip">MIT licence</span>
+        <span class="chip">Next.js 16</span>
+        <span class="chip">Socket.IO</span>
+        <span class="chip">MongoDB</span>
+        <span class="chip">Redis + H3</span>
+        <span class="chip">Stripe, optional</span>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Problem -->
+  <section class="slide" aria-label="The problem">
+    <p class="eyebrow">The problem</p>
+    <h2>Three apps in real time, and money at the end</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="icon">1</div>
+        <h3>Match in seconds</h3>
+        <p>Find a free, approved driver of the right class near the pickup, and get exactly one of them to say yes.</p>
+      </div>
+      <div class="card">
+        <div class="icon">2</div>
+        <h3>Show the car moving</h3>
+        <p>Stream the driver's position to the rider and keep both apps in step when a phone drops its connection.</p>
+      </div>
+      <div class="card">
+        <div class="icon">3</div>
+        <h3>Settle the money</h3>
+        <p>Charge the rider, credit the driver, keep a ledger that explains every balance, and pay drivers out.</p>
+      </div>
+    </div>
+    <p class="note">On top of that, many map platforms need a paid API key before the first trip.</p>
+  </section>
+
+  <!-- 3. Solution -->
+  <section class="slide" aria-label="The solution">
+    <p class="eyebrow">The solution</p>
+    <h2>One codebase, one server process, no paid map APIs</h2>
+    <div class="cards">
+      <div class="card">
+        <div class="icon gold">R</div>
+        <h3>Rider app</h3>
+        <ul>
+          <li>Upfront fares for 4 vehicle tiers</li>
+          <li>Live driver tracking and chat</li>
+          <li>4-digit PIN at pickup</li>
+          <li>Wallet, receipts and ratings</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="icon gold">D</div>
+        <h3>Driver app</h3>
+        <ul>
+          <li>Go online with vehicle details</li>
+          <li>15-second ride offers</li>
+          <li>Arrive, start with PIN, complete</li>
+          <li>Earnings and Stripe payouts</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="icon gold">A</div>
+        <h3>Admin console</h3>
+        <ul>
+          <li>KPIs and a live fleet map</li>
+          <li>Approve or suspend drivers</li>
+          <li>Pricing rules per tier</li>
+          <li>Contact-form support inbox</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Architecture -->
+  <section class="slide" aria-label="How it works: architecture">
+    <p class="eyebrow">How it works</p>
+    <h2>One process serves pages, API and sockets</h2>
+    <svg class="diagram" viewBox="0 0 1120 450" role="img" aria-label="Browsers connect over HTTPS and WebSocket to server.js, which holds the proxy, Socket.IO, pages and API routes, services and background jobs; it uses Redis, MongoDB and outside services.">
+      <!-- browsers -->
+      <g>
+        <rect class="box ink" x="0" y="20" width="190" height="80" rx="12"/>
+        <text class="t1 inv mid" x="95" y="55">Rider app</text>
+        <text class="t2 inv mid" x="95" y="78">book, track, wallet</text>
+        <rect class="box ink" x="0" y="130" width="190" height="80" rx="12"/>
+        <text class="t1 inv mid" x="95" y="165">Driver app</text>
+        <text class="t2 inv mid" x="95" y="188">offers, trip, payouts</text>
+        <rect class="box ink" x="0" y="240" width="190" height="80" rx="12"/>
+        <text class="t1 inv mid" x="95" y="275">Admin console</text>
+        <text class="t2 inv mid" x="95" y="298">KPIs, fleet map</text>
+      </g>
+      <!-- server -->
+      <rect class="server" x="260" y="6" width="500" height="394" rx="18"/>
+
+      <!-- bus -->
+      <path class="wire" d="M190 60 H225 M190 170 H225 M190 280 H225 M225 60 V280"/>
+      <path class="wire" d="M225 80 H284" marker-end="url(#arrow)"/>
+      <text class="lbl" x="231" y="122">HTTPS</text>
+      <path class="live" d="M225 60 V24 H630 V40"/>
+      <text class="lbl gold" x="380" y="18">WebSocket, long-polling fallback</text>
+
+      <rect class="box" x="290" y="40" width="200" height="80" rx="12"/>
+      <text class="t1 mid" x="390" y="73">Proxy</text>
+      <text class="t2 mid" x="390" y="96">roles, rate limits</text>
+
+      <rect class="box" x="530" y="40" width="200" height="80" rx="12"/>
+      <text class="t1 mid" x="630" y="73">Socket.IO</text>
+      <text class="t2 mid" x="630" y="96">/rider /driver /admin</text>
+
+      <rect class="box" x="290" y="160" width="200" height="80" rx="12"/>
+      <text class="t1 mid" x="390" y="193">Pages + API</text>
+      <text class="t2 mid" x="390" y="216">22 pages, 35 API routes</text>
+
+      <rect class="box" x="530" y="160" width="200" height="80" rx="12"/>
+      <text class="t1 mid" x="630" y="193">Services</text>
+      <text class="t2 mid" x="630" y="216">rides, dispatch, fares</text>
+
+      <rect class="box" x="530" y="280" width="200" height="72" rx="12"/>
+      <text class="t1 mid" x="630" y="310">Background jobs</text>
+      <text class="t2 mid" x="630" y="332">sweeper 60 s, flusher 10 s</text>
+
+      <text class="t1" x="292" y="318">server.js</text>
+      <text class="t2" x="292" y="340">one process, one port</text>
+
+      <path class="wire" d="M390 120 V154" marker-end="url(#arrow)"/>
+      <path class="wire" d="M490 200 H524" marker-end="url(#arrow)"/>
+      <path class="wire" d="M630 160 V126" marker-end="url(#arrow)"/>
+      <text class="lbl" x="640" y="146">emit</text>
+
+      <!-- stores -->
+      <path class="store" d="M840 36 V94 A80 14 0 0 0 1000 94 V36"/>
+      <ellipse class="store" cx="920" cy="36" rx="80" ry="14"/>
+      <text class="t1 mid" x="920" y="78">Redis</text>
+      <text class="t2 mid" x="920" y="98">H3 index, GPS, locks</text>
+
+      <path class="store" d="M840 166 V224 A80 14 0 0 0 1000 224 V166"/>
+      <ellipse class="store" cx="920" cy="166" rx="80" ry="14"/>
+      <text class="t1 mid" x="920" y="208">MongoDB</text>
+      <text class="t2 mid" x="920" y="228">7 collections</text>
+
+      <rect class="box" x="820" y="290" width="290" height="110" rx="12"/>
+      <text class="t1 mid" x="965" y="318">Outside services</text>
+      <text class="t2 mid" x="965" y="344">OSRM routes, Photon places</text>
+      <text class="t2 mid" x="965" y="366">Stripe, map tiles</text>
+      <text class="t2 mid" x="965" y="388">S3-compatible bucket, optional</text>
+
+      <path class="live" d="M730 70 H834"/>
+      <text class="lbl gold" x="748" y="62">GPS pings</text>
+      <path class="wire" d="M730 172 H790 V88 H834" marker-end="url(#arrow)"/>
+      <path class="wire" d="M730 194 H834" marker-end="url(#arrow)"/>
+      <path class="wire" d="M730 300 H770 V216 H834" marker-end="url(#arrow)"/>
+      <path class="wire" d="M390 240 V376 H814" marker-end="url(#arrow)"/>
+      <text class="lbl" x="560" y="370">routes, places, payments</text>
+
+      <!-- legend -->
+      <path class="wire" d="M300 430 H340"/>
+      <text class="lbl" x="350" y="434">request or call</text>
+      <path class="live" d="M500 430 H540"/>
+      <text class="lbl" x="550" y="434">realtime over Socket.IO</text>
+
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+          <path class="arrowhead" d="M0 0 L10 5 L0 10 z"/>
+        </marker>
+      </defs>
+    </svg>
+    <p class="note">MongoDB keeps what must last. Redis keeps what changes every few seconds and can be rebuilt after a restart.</p>
+  </section>
+
+  <!-- 5. Ride flow -->
+  <section class="slide" aria-label="A ride step by step">
+    <p class="eyebrow">How it works</p>
+    <h2>Each step is an API call the server checks</h2>
+    <div class="steps">
+      <div class="track" aria-hidden="true"><div class="track-fill"></div></div>
+      <div class="step" style="--i:0"><div class="dot">1</div><h3>Estimate</h3><p>OSRM route, fares for all 4 tiers, surge from demand and supply</p></div>
+      <div class="step" style="--i:1"><div class="dot">2</div><h3>Book</h3><p>One live ride per rider; the wallet must cover the fare; a PIN is drawn</p></div>
+      <div class="step" style="--i:2"><div class="dot">3</div><h3>Dispatch</h3><p>Offer to the best driver for 15 s, then the next, up to 8</p></div>
+      <div class="step" style="--i:3"><div class="dot">4</div><h3>Accept</h3><p>Atomic claim of driver and ride; the rider sees car and ETA</p></div>
+      <div class="step" style="--i:4"><div class="dot">5</div><h3>Pickup</h3><p>Driver marks arrival, then starts only with the rider's PIN</p></div>
+      <div class="step" style="--i:5"><div class="dot">6</div><h3>Complete</h3><p>Rider debited, driver credited, ledger rows and a payment record</p></div>
+      <div class="step" style="--i:6"><div class="dot">7</div><h3>Rate</h3><p>Each side rates once; averages update</p></div>
+    </div>
+    <p class="note">Sockets only tell the other side what already happened. A repeated or late request gets a 409, and a reconnecting app resumes from <code>GET /api/rides/active</code>.</p>
+  </section>
+
+  <!-- 6. H3 dispatch -->
+  <section class="slide" aria-label="Finding a driver">
+    <p class="eyebrow">Finding a driver</p>
+    <h2>Search ring by ring, offer one driver at a time</h2>
+    <div class="split">
+      <svg class="hexmap" viewBox="0 0 500 470" role="img" aria-label="Hexagon rings around the pickup cell; drivers are found in rings two and three and the closest high-scoring driver is chosen.">
+        <g transform="translate(250 228)">
+          <polygon class="hex ring-1" points="-27.3,-14.2 -27.3,14.2 -52.0,28.5 -76.6,14.2 -76.6,-14.3 -52.0,-28.5"/>
+          <polygon class="hex ring-1" points="-1.3,30.8 -1.3,59.2 -26.0,73.5 -50.7,59.2 -50.7,30.7 -26.0,16.5"/>
+          <polygon class="hex ring-1" points="-1.3,-59.2 -1.3,-30.8 -26.0,-16.5 -50.7,-30.8 -50.7,-59.2 -26.0,-73.5"/>
+          <polygon class="hex ring-1" points="50.7,30.8 50.7,59.2 26.0,73.5 1.3,59.2 1.3,30.7 26.0,16.5"/>
+          <polygon class="hex ring-1" points="50.7,-59.2 50.7,-30.8 26.0,-16.5 1.3,-30.8 1.3,-59.2 26.0,-73.5"/>
+          <polygon class="hex ring-1" points="76.6,-14.2 76.6,14.2 52.0,28.5 27.3,14.2 27.3,-14.3 52.0,-28.5"/>
+          <polygon class="hex ring-2" points="-79.2,-14.2 -79.2,14.2 -103.9,28.5 -128.6,14.2 -128.6,-14.3 -103.9,-28.5"/>
+          <polygon class="hex ring-2" points="-53.3,30.8 -53.3,59.2 -77.9,73.5 -102.6,59.2 -102.6,30.7 -77.9,16.5"/>
+          <polygon class="hex ring-2" points="-27.3,75.8 -27.3,104.2 -52.0,118.5 -76.6,104.2 -76.6,75.8 -52.0,61.5"/>
+          <polygon class="hex ring-2" points="-53.3,-59.2 -53.3,-30.8 -77.9,-16.5 -102.6,-30.8 -102.6,-59.2 -77.9,-73.5"/>
+          <polygon class="hex ring-2" points="24.7,75.8 24.7,104.2 0.0,118.5 -24.7,104.2 -24.7,75.8 0.0,61.5"/>
+          <polygon class="hex ring-2" points="-27.3,-104.2 -27.3,-75.8 -52.0,-61.5 -76.6,-75.8 -76.6,-104.2 -52.0,-118.5"/>
+          <polygon class="hex ring-2" points="76.6,75.8 76.6,104.2 52.0,118.5 27.3,104.2 27.3,75.8 52.0,61.5"/>
+          <polygon class="hex ring-2" points="24.7,-104.2 24.7,-75.8 0.0,-61.5 -24.7,-75.8 -24.7,-104.2 0.0,-118.5"/>
+          <polygon class="hex ring-2" points="102.6,30.8 102.6,59.2 77.9,73.5 53.3,59.2 53.3,30.7 77.9,16.5"/>
+          <polygon class="hex ring-2" points="76.6,-104.2 76.6,-75.8 52.0,-61.5 27.3,-75.8 27.3,-104.2 52.0,-118.5"/>
+          <polygon class="hex ring-2" points="102.6,-59.2 102.6,-30.8 77.9,-16.5 53.3,-30.8 53.3,-59.2 77.9,-73.5"/>
+          <polygon class="hex ring-2" points="128.6,-14.2 128.6,14.2 103.9,28.5 79.2,14.2 79.2,-14.3 103.9,-28.5"/>
+          <polygon class="hex ring-3" points="-131.2,-14.2 -131.2,14.2 -155.9,28.5 -180.6,14.2 -180.6,-14.3 -155.9,-28.5"/>
+          <polygon class="hex ring-3" points="-105.2,30.8 -105.2,59.2 -129.9,73.5 -154.6,59.2 -154.6,30.7 -129.9,16.5"/>
+          <polygon class="hex ring-3" points="-79.2,75.8 -79.2,104.2 -103.9,118.5 -128.6,104.2 -128.6,75.8 -103.9,61.5"/>
+          <polygon class="hex ring-3" points="-53.3,120.8 -53.3,149.2 -77.9,163.5 -102.6,149.2 -102.6,120.8 -77.9,106.5"/>
+          <polygon class="hex ring-3" points="-105.2,-59.2 -105.2,-30.8 -129.9,-16.5 -154.6,-30.8 -154.6,-59.2 -129.9,-73.5"/>
+          <polygon class="hex ring-3" points="-1.3,120.8 -1.3,149.2 -26.0,163.5 -50.7,149.2 -50.7,120.8 -26.0,106.5"/>
+          <polygon class="hex ring-3" points="-79.2,-104.2 -79.2,-75.8 -103.9,-61.5 -128.6,-75.8 -128.6,-104.2 -103.9,-118.5"/>
+          <polygon class="hex ring-3" points="50.7,120.8 50.7,149.2 26.0,163.5 1.3,149.2 1.3,120.8 26.0,106.5"/>
+          <polygon class="hex ring-3" points="-53.3,-149.2 -53.3,-120.8 -77.9,-106.5 -102.6,-120.8 -102.6,-149.2 -77.9,-163.5"/>
+          <polygon class="hex ring-3" points="102.6,120.8 102.6,149.2 77.9,163.5 53.3,149.2 53.3,120.8 77.9,106.5"/>
+          <polygon class="hex ring-3" points="-1.3,-149.2 -1.3,-120.8 -26.0,-106.5 -50.7,-120.8 -50.7,-149.2 -26.0,-163.5"/>
+          <polygon class="hex ring-3" points="128.6,75.8 128.6,104.2 103.9,118.5 79.2,104.2 79.2,75.8 103.9,61.5"/>
+          <polygon class="hex ring-3" points="50.7,-149.2 50.7,-120.8 26.0,-106.5 1.3,-120.8 1.3,-149.2 26.0,-163.5"/>
+          <polygon class="hex ring-3" points="154.6,30.8 154.6,59.2 129.9,73.5 105.2,59.2 105.2,30.7 129.9,16.5"/>
+          <polygon class="hex ring-3" points="102.6,-149.2 102.6,-120.8 77.9,-106.5 53.3,-120.8 53.3,-149.2 77.9,-163.5"/>
+          <polygon class="hex ring-3" points="128.6,-104.2 128.6,-75.8 103.9,-61.5 79.2,-75.8 79.2,-104.2 103.9,-118.5"/>
+          <polygon class="hex ring-3" points="154.6,-59.2 154.6,-30.8 129.9,-16.5 105.2,-30.8 105.2,-59.2 129.9,-73.5"/>
+          <polygon class="hex ring-3" points="180.6,-14.2 180.6,14.2 155.9,28.5 131.2,14.2 131.2,-14.3 155.9,-28.5"/>
+          <polygon class="hex ring-0" points="24.7,-14.2 24.7,14.2 0.0,28.5 -24.7,14.2 -24.7,-14.3 0.0,-28.5"/>
+          <text class="pin-label" x="0" y="5">P</text>
+
+          <circle class="best-halo" cx="77.9" cy="-45" r="15"/>
+          <circle class="drv" cx="77.9" cy="-45" r="7.5"/>
+          <circle class="drv" cx="0" cy="90" r="7.5"/>
+          <circle class="drv" cx="77.9" cy="-135" r="7.5"/>
+          <circle class="drv" cx="-129.9" cy="-45" r="7.5"/>
+          <circle class="drv" cx="103.9" cy="90" r="7.5"/>
+        </g>
+        <text class="map-label" x="16" y="438">Illustration: P is the pickup cell and the rings widen outward.</text>
+        <text class="map-label" x="16" y="458">Dots are online drivers; the gold circle marks the one chosen.</text>
+      </svg>
+      <ol class="how">
+        <li><strong>Look in the pickup's H3 cell</strong> and the rings around it, read straight from Redis sets.</li>
+        <li><strong>Widen ring by ring</strong> until at least 3 drivers turn up, up to 10 rings for the 15 km radius. MongoDB <code>$geoNear</code> is the fallback.</li>
+        <li><strong>Score each one:</strong> distance 40, rating 25, acceptance 20, few cancellations 15.</li>
+        <li><strong>Offer to the best driver</strong> for 15 seconds. A Redis key names the only driver who may accept.</li>
+      </ol>
+    </div>
+  </section>
+
+  <!-- 7. Stack -->
+  <section class="slide" aria-label="Tech stack">
+    <p class="eyebrow">Tech stack</p>
+    <h2>Open parts, and nothing that needs a map key</h2>
+    <div class="stack">
+      <div class="row"><span class="k">Web</span><span class="v">Next.js 16 App Router, React 19, hand-written CSS</span></div>
+      <div class="row"><span class="k">Realtime</span><span class="v">Socket.IO 4 on the custom server, JWT per namespace</span></div>
+      <div class="row"><span class="k">Data</span><span class="v">MongoDB with Mongoose, Redis with ioredis</span></div>
+      <div class="row"><span class="k">Spatial</span><span class="v">Uber H3 (h3-js), MongoDB 2dsphere indexes</span></div>
+      <div class="row"><span class="k">Maps</span><span class="v">MapLibre GL, CARTO and OSM tiles, Photon, OSRM</span></div>
+      <div class="row"><span class="k">Sign-in</span><span class="v">NextAuth v5 credentials, bcrypt, JWT sessions</span></div>
+      <div class="row"><span class="k">Payments</span><span class="v">Stripe Checkout top-ups, Stripe Connect payouts</span></div>
+      <div class="row"><span class="k">Tooling</span><span class="v">zod, sharp, Docker, seed and a driver simulator</span></div>
+    </div>
+  </section>
+
+  <!-- 8. Status -->
+  <section class="slide" aria-label="Status">
+    <p class="eyebrow">Status</p>
+    <h2>The full ride loop runs today; several gaps remain</h2>
+    <div class="cols">
+      <div class="col">
+        <h3><span class="badge ok">Built</span> in this code</h3>
+        <ul>
+          <li>Booking, dispatch, live tracking, chat, PIN start</li>
+          <li>Wallet with ledger, late-cancel fee, ratings</li>
+          <li>Stripe top-ups and driver payouts, when configured</li>
+          <li>Admin KPIs, fleet map, approvals, pricing, inbox</li>
+          <li>Health check, Docker image, seed, driver simulator</li>
+        </ul>
+      </div>
+      <div class="col">
+        <h3><span class="badge gap">Not yet</span> built</h3>
+        <ul>
+          <li>Automated tests</li>
+          <li>Password change or reset, email verification</li>
+          <li>Admin tools to deactivate or delete users</li>
+          <li>Driver document uploads</li>
+          <li>Per-city fares, and running more than one instance</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- 9. Next steps -->
+  <section class="slide" aria-label="Next steps">
+    <p class="eyebrow">Next steps</p>
+    <h2>Suggested from the gaps in the code and the README</h2>
+    <ol class="next">
+      <li><span><strong>Tests</strong> around ride transitions, settlement, top-ups and payouts.</span></li>
+      <li><span><strong>Account management:</strong> password change and reset, deactivate and delete users from the admin console.</span></li>
+      <li><span><strong>Driver documents</strong> through the presigned upload endpoint that already exists.</span></li>
+      <li><span><strong>Scale out:</strong> Socket.IO Redis adapter, a Redis-backed offer queue, self-hosted OSRM and Photon.</span></li>
+      <li><span><strong>Before real passengers:</strong> licensing, insurance, money-transmission and driver-classification checks.</span></li>
+    </ol>
+  </section>
+
+  <div class="chrome" id="chrome">
+    <div class="nav">
+      <button type="button" id="prev" aria-label="Previous slide">&#8592;</button>
+      <button type="button" id="next" aria-label="Next slide">&#8594;</button>
+    </div>
+    <span class="counter" id="counter" aria-live="polite">1 / 9</span>
+    <div class="progress" aria-hidden="true"><div class="progress-fill" id="progress"></div></div>
+  </div>
+</main>
+
+<script>
+(function () {
+  var stage = document.getElementById('stage');
+  var chrome = document.getElementById('chrome');
+  var slides = Array.prototype.slice.call(stage.querySelectorAll('.slide'));
+  var counter = document.getElementById('counter');
+  var progress = document.getElementById('progress');
+  var index = 0;
+
+  function fit() {
+    var s = Math.min(window.innerWidth / 1280, window.innerHeight / 720);
+    stage.style.setProperty('--scale', String(s));
+  }
+
+  function show(i) {
+    index = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach(function (el, n) {
+      var active = n === index;
+      el.classList.toggle('is-active', active);
+      el.setAttribute('aria-hidden', active ? 'false' : 'true');
+    });
+    counter.textContent = (index + 1) + ' / ' + slides.length;
+    progress.style.width = ((index + 1) / slides.length * 100) + '%';
+    chrome.classList.toggle('on-dark', slides[index].classList.contains('dark'));
+    try { history.replaceState(null, '', '#' + (index + 1)); } catch (e) { /* file views may block it */ }
+  }
+
+  function next() { show(index + 1); }
+  function prev() { show(index - 1); }
+
+  document.addEventListener('keydown', function (e) {
+    if (e.altKey || e.ctrlKey || e.metaKey) return;
+    var k = e.key;
+    if (k === 'ArrowRight' || k === 'ArrowDown' || k === 'PageDown' || k === 'Enter' || (k === ' ' && !e.shiftKey)) {
+      e.preventDefault(); next();
+    } else if (k === 'ArrowLeft' || k === 'ArrowUp' || k === 'PageUp' || k === 'Backspace' || (k === ' ' && e.shiftKey)) {
+      e.preventDefault(); prev();
+    } else if (k === 'Home') {
+      e.preventDefault(); show(0);
+    } else if (k === 'End') {
+      e.preventDefault(); show(slides.length - 1);
+    }
+  });
+
+  document.getElementById('prev').addEventListener('click', function (e) { e.stopPropagation(); prev(); });
+  document.getElementById('next').addEventListener('click', function (e) { e.stopPropagation(); next(); });
+
+  // Click the left third to go back, anywhere else to go forward
+  stage.addEventListener('click', function (e) {
+    var rect = stage.getBoundingClientRect();
+    if (e.clientX - rect.left < rect.width / 3) prev(); else next();
+  });
+
+  // Swipe on touch screens
+  var startX = null;
+  stage.addEventListener('touchstart', function (e) { startX = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) {
+    if (startX === null) return;
+    var dx = e.changedTouches[0].clientX - startX;
+    startX = null;
+    if (Math.abs(dx) > 40) {
+      e.preventDefault();
+      if (dx < 0) next(); else prev();
+    }
+  });
+
+  window.addEventListener('resize', fit);
+  fit();
+  var fromHash = parseInt((location.hash || '').slice(1), 10);
+  show(Number.isFinite(fromHash) ? fromHash - 1 : 0);
+})();
+</script>
+</body>
+</html>
